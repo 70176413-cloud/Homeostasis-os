@@ -1,7 +1,5 @@
 window.HomeostasisApi = (() => {
-  
-  
-  const baseUrl = (window.HOMEOSTASIS_API_URL || "https://homeostasis-os.vercel.app").replace(/\/$/, "");
+  const baseUrl = (window.HOMEOSTASIS_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 
   async function request(path, options = {}) {
     const response = await fetch(`${baseUrl}${path}`, {
