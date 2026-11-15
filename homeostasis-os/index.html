@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HOMEOSTASIS-OS // Spaceflight Health &amp; Medicine Explorer</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            deck: {
+              deep: "#070B11",
+              bg: "#0B121B",
+              surface: "#121C28",
+              panel: "#172331",
+              well: "#0F1822",
+              track: "#1F2D3D",
+              border: "#29394B",
+              text: "#E4EAF0",
+              secondary: "#94A5B8",
+              muted: "#65788C",
+              accent: "#4686CC",
+              nominal: "#359672",
+              nominalTint: "#10261E",
+              caution: "#D4963B",
+              cautionTint: "#261E11",
+              critical: "#D6473F",
+              criticalTint: "#291415",
+            }
+          },
+          fontFamily: {
+            sans: ["'IBM Plex Sans'", "sans-serif"],
+            mono: ["'IBM Plex Mono'", "monospace"],
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/theme.css" />
+</head>
+<body class="bg-deck-bg text-deck-text">
+
+  <!-- MANDATORY INTRO OVERLAY (NO SKIP BUTTON) -->
+  <div id="intro-overlay" class="fixed inset-0 z-[100] bg-[#030508] overflow-hidden">
+    <canvas id="intro-canvas" class="block w-full h-full"></canvas>
+    <div id="title-container" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-[0.8] opacity-0 pointer-events-none w-full text-center z-10">
+      <div class="font-sans font-bold text-[#4686CC] tracking-[0.05em] whitespace-nowrap mb-2.5" style="font-size: clamp(28px, 6vw, 90px);">HOMEOSTASIS-OS</div>
+      <div class="font-mono text-[#94A5B8] uppercase tracking-[0.2em] whitespace-nowrap" style="font-size: clamp(10px, 2vw, 16px);">Mission Telemetry Initiated</div>
+    </div>
+  </div>
+
+  <!-- CLEAN RESPONSIVE HEADER -->
+  <header class="bg-deck-surface border-b border-deck-border sticky top-0 z-40">
+    <div class="max-w-[1440px] mx-auto px-4 lg:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <svg width="34" height="34" viewBox="0 0 36 36" class="shrink-0" aria-label="Mission Emblem">
+          <rect x="0.5" y="0.5" width="35" height="35" fill="#0F1822" stroke="#394E66"></rect>
+          <circle cx="18" cy="18" r="10.5" fill="none" stroke="#4686CC" stroke-width="1.5"></circle>
+          <ellipse cx="18" cy="18" rx="14" ry="5" transform="rotate(-24 18 18)" fill="none" stroke="#E4EAF0" stroke-width="1.2"></ellipse>
+          <path d="M 12,24 L 18,9 L 24,24" fill="none" stroke="#D6473F" stroke-width="1.6"></path>
+        </svg>
+        <div>
+          <div class="font-mono font-bold text-sm sm:text-base tracking-wider text-deck-text">HOMEOSTASIS-OS</div>
+          <div class="text-[11px] text-deck-secondary">Astronaut Health &amp; Space Medicine Simulator</div>
+        </div>
+      </div>
+
+      <nav class="order-3 lg:order-2 w-full lg:w-auto flex flex-wrap items-center gap-1 border-t lg:border-t-0 border-deck-border pt-2 lg:pt-0 text-xs font-medium">
+        <button onclick="App.switchView('conflict', this)" class="nav-tab px-3.5 py-2 text-deck-text font-semibold border-b-2 border-deck-accent bg-deck-panel cursor-pointer">
+          1. Body Balance
+        </button>
+        <button onclick="App.switchView('rxdrift', this)" class="nav-tab px-3.5 py-2 text-deck-secondary border-b-2 border-transparent hover:text-deck-text cursor-pointer">
+          2. Space Medicine
+        </button>
+        <button onclick="App.switchView('sandbox', this)" class="nav-tab px-3.5 py-2 text-deck-secondary border-b-2 border-transparent hover:text-deck-text cursor-pointer">
+          3. Spacewalk Readiness
+        </button>
+      </nav>
+
+      <div class="order-2 lg:order-3 flex items-center gap-2">
+        <select id="crewSelect" onchange="App.switchCrew(this.value)" class="bg-deck-well border border-deck-border text-deck-text font-mono text-xs px-2.5 py-1.5 outline-none cursor-pointer">
+          <option value="">Loading crew…</option>
+        </select>
+        <span id="apiStatus" role="status" class="font-mono text-[10px] text-deck-caution">CONNECTING TO API</span>
+        <button onclick="MicroCheck.open()" class="bg-deck-accent text-deck-text font-mono text-xs font-semibold px-3.5 py-1.5 cursor-pointer whitespace-nowrap">
+          15s Health Check
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO SECTION: LEFT EXPLANATION + RIGHT DEDICATED ROCKET & EARTH LAUNCH ANIMATION -->
+<!-- SEAMLESS FULL-BLEED HERO: LEFT STORY + FULL-CANVAS EARTH & ROCKET ORBIT -->
+  <section class="relative border-b border-deck-border bg-[#070B11] overflow-hidden">
+    <canvas id="launchStageCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+
+    <div class="relative z-10 max-w-[1440px] mx-auto px-4 lg:px-6 py-10 lg:py-14 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+      <!-- Left Story & CTA Buttons -->
+      <div class="lg:col-span-6 space-y-4">
+        <div class="inline-flex items-center gap-3 px-2.5 py-1 bg-[#0B121B]/90 border border-deck-border font-mono text-[11px]">
+          <span id="stagePhaseLbl" class="text-deck-caution font-bold">PHASE: READY ON LAUNCHPAD</span>
+          <span class="text-deck-muted">//</span>
+          <span id="stageAltLbl" class="text-deck-accent">ALT: 0 KM</span>
+        </div>
+        <h1 class="text-2xl sm:text-4xl font-bold text-deck-text leading-tight">
+          In Zero Gravity, Fixing One Health Problem Can Trigger Another.
+        </h1>
+        <p id="heroStoryText" class="text-sm text-deck-secondary leading-relaxed">
+          Astronauts lose bone strength in space, so they do heavy squats. But in zero gravity, fluid floats to the head. Heavy lifting can push fluid into the eyes and stress the kidneys. Use this interactive simulator to balance workouts, medicines, and spacewalk safety.
+        </p>
+        <div class="flex flex-wrap gap-3 pt-1">
+          <button onclick="document.getElementById('mainContent').scrollIntoView({behavior:'smooth'})" class="px-5 py-2.5 bg-deck-accent text-deck-text font-semibold text-xs cursor-pointer">
+            Try the Body Simulator
+          </button>
+          <button onclick="MicroCheck.open()" class="px-5 py-2.5 bg-deck-surface border border-deck-border text-deck-text font-semibold text-xs cursor-pointer">
+            Take 15-Second Check
+          </button>
+        </div>
+      </div>
+
+      <!-- Open Right Breathing Space for Earth & Orbiting Rocket (Zero Box Border) -->
+      <div class="lg:col-span-6 h-[240px] lg:h-[300px] pointer-events-none"></div>
+    </div>
+
+    <!-- CLEAN STATUS STRIP BELOW HERO -->
+    <div class="relative z-10 bg-deck-surface/95 border-t border-deck-border">
+      <div class="max-w-[1440px] mx-auto px-4 lg:px-6 py-2.5 grid grid-cols-2 lg:grid-cols-5 gap-2.5 text-xs">
+        <div class="bg-deck-well border border-deck-border px-3 py-2 flex items-center justify-between">
+          <span class="text-deck-muted font-mono text-[11px]">CREW</span>
+          <strong id="heroCrewName" class="font-mono text-deck-text whitespace-nowrap truncate">CDR VANCE</strong>
+        </div>
+        <div class="bg-deck-well border border-deck-border px-3 py-2 flex items-center justify-between">
+          <span class="text-deck-muted font-mono text-[11px]">SPACEWALK</span>
+          <strong id="heroEva" class="font-mono text-deck-text">In 46 Hours</strong>
+        </div>
+        <div class="bg-deck-well border border-deck-border px-3 py-2 flex items-center justify-between">
+          <span class="text-deck-muted font-mono text-[11px]">CABIN CO2</span>
+          <strong id="heroCo2" class="font-mono text-deck-caution">3.4 (High)</strong>
+        </div>
+        <div class="bg-deck-well border border-deck-border px-3 py-2 flex items-center justify-between">
+          <span class="text-deck-muted font-mono text-[11px]">WATER</span>
+          <strong id="heroHyd" class="font-mono text-deck-caution">-400 mL</strong>
+        </div>
+        <div class="col-span-2 lg:col-span-1 bg-deck-well border border-deck-border px-3 py-2 flex items-center justify-between">
+          <span class="text-deck-muted font-mono text-[11px]">RADIATION</span>
+          <strong id="heroRad" class="font-mono text-deck-text">68.4 mSv</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DETERMINISTIC SKELETON LOADER -->
+  <div id="skeletonView" class="hidden flex-1 max-w-[1440px] w-full mx-auto p-6 space-y-4">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div class="lg:col-span-5 h-80 bg-deck-panel border border-deck-border p-4"></div>
+      <div class="lg:col-span-7 h-80 bg-deck-panel border border-deck-border p-4"></div>
+    </div>
+  </div>
+
+  <!-- MAIN INTERACTIVE SIMULATOR VIEWS -->
+  <!-- MAIN INTERACTIVE SIMULATOR VIEWS -->
+  <main id="mainContent" class="flex-1 max-w-[1440px] w-full mx-auto p-4 lg:p-6 space-y-6">
+    <!-- PERSISTENT 4 CIRCULAR EQUILIBRIUM RINGS (MATCHING REFERENCE LAYOUT) -->
+    <section aria-label="Live Homeostasis Rings" class="space-y-2.5">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="text-xs text-deck-secondary font-mono">Live physiological homeostasis indices across active crew telemetry</span>
+        <span id="topRingsBadge" class="font-mono text-[10px] px-2 py-0.5 border border-deck-caution bg-deck-cautionTint text-deck-caution">EVA-04 // CONDITIONAL</span>
+      </div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-deck-surface border border-deck-border p-4 flex flex-col items-center justify-center">
+          <svg width="88" height="88" viewBox="0 0 100 100" class="-rotate-90">
+            <circle cx="50" cy="50" r="38" fill="none" stroke="#1F2D3D" stroke-width="8"></circle>
+            <circle id="topRingBone" class="smooth-geom" cx="50" cy="50" r="38" fill="none" stroke="#4686CC" stroke-width="8" stroke-linecap="round" stroke-dasharray="238.76" stroke-dashoffset="47.7"></circle>
+          </svg>
+          <div id="topValBone" class="font-mono text-lg font-bold text-[#4686CC] mt-2">80%</div>
+          <div class="font-mono text-[11px] text-deck-secondary tracking-wider uppercase mt-0.5">BONE MUSCLE</div>
+        </div>
+
+        <div class="bg-deck-surface border border-deck-border p-4 flex flex-col items-center justify-center">
+          <svg width="88" height="88" viewBox="0 0 100 100" class="-rotate-90">
+            <circle cx="50" cy="50" r="38" fill="none" stroke="#1F2D3D" stroke-width="8"></circle>
+            <circle id="topRingNeuro" class="smooth-geom" cx="50" cy="50" r="38" fill="none" stroke="#359672" stroke-width="8" stroke-linecap="round" stroke-dasharray="238.76" stroke-dashoffset="74.0"></circle>
+          </svg>
+          <div id="topValNeuro" class="font-mono text-lg font-bold text-[#359672] mt-2">69%</div>
+          <div class="font-mono text-[11px] text-deck-secondary tracking-wider uppercase mt-0.5">NEURO OCULAR</div>
+        </div>
+
+        <div class="bg-deck-surface border border-deck-border p-4 flex flex-col items-center justify-center">
+          <svg width="88" height="88" viewBox="0 0 100 100" class="-rotate-90">
+            <circle cx="50" cy="50" r="38" fill="none" stroke="#1F2D3D" stroke-width="8"></circle>
+            <circle id="topRingRenal" class="smooth-geom" cx="50" cy="50" r="38" fill="none" stroke="#D4963B" stroke-width="8" stroke-linecap="round" stroke-dasharray="238.76" stroke-dashoffset="54.9"></circle>
+          </svg>
+          <div id="topValRenal" class="font-mono text-lg font-bold text-[#D4963B] mt-2">77%</div>
+          <div class="font-mono text-[11px] text-deck-secondary tracking-wider uppercase mt-0.5">RENAL METABOLIC</div>
+        </div>
+
+        <div class="bg-deck-surface border border-deck-border p-4 flex flex-col items-center justify-center">
+          <svg width="88" height="88" viewBox="0 0 100 100" class="-rotate-90">
+            <circle cx="50" cy="50" r="38" fill="none" stroke="#1F2D3D" stroke-width="8"></circle>
+            <circle id="topRingCog" class="smooth-geom" cx="50" cy="50" r="38" fill="none" stroke="#6FA8DC" stroke-width="8" stroke-linecap="round" stroke-dasharray="238.76" stroke-dashoffset="43.0"></circle>
+          </svg>
+          <div id="topValCog" class="font-mono text-lg font-bold text-[#6FA8DC] mt-2">82%</div>
+          <div class="font-mono text-[11px] text-deck-secondary tracking-wider uppercase mt-0.5">COGNITIVE</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-conflict" class="view-section space-y-5"></section>
+    <section id="view-rxdrift" class="view-section hidden space-y-5"></section>
+    <section id="view-sandbox" class="view-section hidden space-y-5"></section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-deck-deep border-t border-deck-border px-4 lg:px-6 py-3 flex flex-col sm:flex-row justify-between items-center gap-2 font-mono text-[11px] text-deck-secondary">
+    <span>HOMEOSTASIS-OS // EDUCATIONAL &amp; CREW DECISION-SUPPORT SIMULATOR</span>
+    <div class="flex gap-5">
+      <button onclick="App.openLegal('TERMS OF USE &amp; DISCLAIMER')" class="underline text-deck-secondary hover:text-deck-text cursor-pointer">Terms of Use</button>
+      <button onclick="App.openLegal('PRIVACY POLICY')" class="underline text-deck-secondary hover:text-deck-text cursor-pointer">Privacy Policy</button>
+    </div>
+  </footer>
+
+  <div id="microModal" class="hidden fixed inset-0 bg-[#070B11]/90 z-50 flex items-center justify-center p-4 overflow-y-auto"></div>
+
+  <div id="legalModal" class="hidden fixed inset-0 bg-[#070B11]/90 z-50 flex items-center justify-center p-4">
+    <div class="w-[540px] max-w-full bg-deck-surface border border-deck-border p-5 space-y-3">
+      <div class="flex justify-between items-center pb-2 border-b border-deck-border font-mono">
+        <span id="legalTitle" class="font-bold text-xs text-deck-text">TERMS</span>
+        <button onclick="document.getElementById('legalModal').classList.add('hidden')" class="text-xs text-deck-secondary cursor-pointer">[ CLOSE ]</button>
+      </div>
+      <p id="legalBody" class="text-xs text-deck-secondary leading-relaxed"></p>
+    </div>
+  </div>
+
+  <script defer src="js/state.js?v=10"></script>
+  <script defer src="js/api.js?v=10"></script>
+  <script defer src="js/orbitHero.js?v=10"></script>
+  <script defer src="js/conflictEngine.js?v=10"></script>
+  <script defer src="js/rxDrift.js?v=10"></script>
+  <script defer src="js/equilibriumSandbox.js?v=10"></script>
+  <script defer src="js/microCheck.js?v=10"></script>
+  <script defer src="js/intro.js?v=10"></script>
+  <script defer src="js/app.js?v=10"></script>
+</body>
+</html>
